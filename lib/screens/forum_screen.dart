@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../services/forum_service.dart';
 
 class ForumScreen extends StatefulWidget {
+  const ForumScreen({Key? key}) : super(key: key);
+
   @override
   _ForumScreenState createState() => _ForumScreenState();
 }
@@ -18,7 +21,15 @@ class _ForumScreenState extends State<ForumScreen> {
 
   Future<void> _createPost() async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null || _titleController.text.trim().isEmpty || _messageController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in both title and message.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
 
     try {
       await _db.collection('forum_posts').add({
@@ -30,9 +41,18 @@ class _ForumScreenState extends State<ForumScreen> {
       _titleController.clear();
       _messageController.clear();
       Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Post created successfully!'),
+          backgroundColor: Colors.indigo[600],
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create post: ${e.toString()}')),
+        SnackBar(
+          content: Text('Failed to create post: ${e.toString()}'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
@@ -41,7 +61,12 @@ class _ForumScreenState extends State<ForumScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Create New Post'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: Colors.white,
+        title: Text(
+          'Create New Post',
+          style: TextStyle(color: Colors.indigo[900], fontWeight: FontWeight.bold),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -50,18 +75,29 @@ class _ForumScreenState extends State<ForumScreen> {
                 controller: _titleController,
                 decoration: InputDecoration(
                   labelText: 'Title',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.title, color: Colors.indigo[600]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.indigo[600]!, width: 2),
+                  ),
                 ),
                 maxLength: 100,
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextField(
                 controller: _messageController,
                 decoration: InputDecoration(
                   labelText: 'Message',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.message, color: Colors.indigo[600]),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.indigo[600]!, width: 2),
+                  ),
                 ),
-                maxLines: 3,
+                maxLines: 4,
+                maxLength: 500,
               ),
             ],
           ),
@@ -69,11 +105,19 @@ class _ForumScreenState extends State<ForumScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.indigo[700]),
+            ),
           ),
           ElevatedButton(
             onPressed: _createPost,
-            child: Text('Post'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo[600],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Post'),
           ),
         ],
       ),
@@ -95,11 +139,14 @@ class _ForumScreenState extends State<ForumScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.indigo[50],
       appBar: AppBar(
-        title: Text('Student Forum'),
+        backgroundColor: Colors.indigo[600],
+        foregroundColor: Colors.white,
+        title: const Text('Student Forum'),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
+            icon: Icon(Icons.add, color: Colors.indigo[100]),
             onPressed: _showCreatePostDialog,
             tooltip: 'Create new post',
           ),
@@ -109,21 +156,47 @@ class _ForumScreenState extends State<ForumScreen> {
         stream: _db.collection('forum_posts').orderBy('timestamp', descending: true).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Colors.indigo));
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error loading posts'));
+            return Center(
+              child: Text(
+                'Error loading posts',
+                style: TextStyle(color: Colors.indigo[900], fontSize: 16),
+              ),
+            );
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No posts yet. Be the first to post!'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.forum, size: 64, color: Colors.indigo[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No posts yet.',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.indigo[900],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Be the first to post!',
+                    style: TextStyle(fontSize: 16, color: Colors.indigo[700]),
+                  ),
+                ],
+              ),
+            );
           }
 
           final posts = snapshot.data!.docs;
 
           return ListView.builder(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(16),
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final post = posts[index];
@@ -150,27 +223,29 @@ class _ForumScreenState extends State<ForumScreen> {
 
   Widget _buildPostLoading() {
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        title: Container(
-          height: 16,
-          width: 100,
-          color: Colors.grey[300],
-        ),
-        subtitle: Column(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              height: 18,
+              width: 150,
+              color: Colors.grey[300],
+            ),
+            const SizedBox(height: 8),
             Container(
               height: 14,
               width: double.infinity,
               color: Colors.grey[200],
-              margin: EdgeInsets.only(top: 8),
             ),
+            const SizedBox(height: 12),
             Container(
               height: 12,
-              width: 150,
+              width: 100,
               color: Colors.grey[200],
-              margin: EdgeInsets.only(top: 8),
             ),
           ],
         ),
@@ -179,39 +254,69 @@ class _ForumScreenState extends State<ForumScreen> {
   }
 
   Widget _buildPostCard(DocumentSnapshot post, String authorEmail) {
+    String formattedDate = 'Unknown date';
+    if (post['timestamp'] != null && post['timestamp'] is Timestamp) {
+      Timestamp timestamp = post['timestamp'] as Timestamp;
+      DateTime dateTime = timestamp.toDate();
+      formattedDate = DateFormat('MMM dd, yyyy, h:mm a').format(dateTime);
+    }
+
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 8),
-      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () => _openRepliesScreen(post, authorEmail),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                post['title'],
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(post['message']),
-              SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.person, size: 14, color: Colors.grey),
-                  SizedBox(width: 4),
-                  Text(
-                    authorEmail,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
+                  CircleAvatar(
+                    backgroundColor: Colors.indigo[100],
+                    child: Icon(Icons.forum, color: Colors.indigo[600]),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      post['title'],
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.indigo[900],
+                      ),
                     ),
                   ),
-                  Spacer(),
-                  Icon(Icons.comment, size: 14, color: Colors.grey),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                post['message'],
+                style: TextStyle(fontSize: 14, color: Colors.indigo[700]),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.person, size: 14, color: Colors.indigo[600]),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      authorEmail,
+                      style: TextStyle(fontSize: 12, color: Colors.indigo[600]),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.access_time, size: 14, color: Colors.indigo[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    formattedDate,
+                    style: TextStyle(fontSize: 12, color: Colors.indigo[600]),
+                  ),
                 ],
               ),
             ],
@@ -228,10 +333,11 @@ class RepliesScreen extends StatefulWidget {
   final String authorEmail;
 
   const RepliesScreen({
+    Key? key,
     required this.postId,
     required this.postTitle,
     required this.authorEmail,
-  });
+  }) : super(key: key);
 
   @override
   _RepliesScreenState createState() => _RepliesScreenState();
@@ -245,10 +351,19 @@ class _RepliesScreenState extends State<RepliesScreen> {
 
   Future<void> _addReply() async {
     final user = _auth.currentUser;
-    if (user == null || _replyController.text.trim().isEmpty) return;
+    if (user == null || _replyController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a reply.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
 
     try {
-      await _db.collection('forum_posts')
+      await _db
+          .collection('forum_posts')
           .doc(widget.postId)
           .collection('replies')
           .add({
@@ -257,9 +372,18 @@ class _RepliesScreenState extends State<RepliesScreen> {
         'timestamp': Timestamp.now(),
       });
       _replyController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Reply posted successfully!'),
+          backgroundColor: Colors.indigo[600],
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to post reply: ${e.toString()}')),
+        SnackBar(
+          content: Text('Failed to post reply: ${e.toString()}'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
@@ -267,14 +391,20 @@ class _RepliesScreenState extends State<RepliesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.indigo[50],
       appBar: AppBar(
+        backgroundColor: Colors.indigo[600],
+        foregroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.postTitle),
+            Text(
+              widget.postTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             Text(
               'Posted by: ${widget.authorEmail}',
-              style: TextStyle(fontSize: 12, color: Colors.white70),
+              style: TextStyle(fontSize: 12, color: Colors.indigo[100]),
             ),
           ],
         ),
@@ -283,28 +413,55 @@ class _RepliesScreenState extends State<RepliesScreen> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _db.collection('forum_posts')
+              stream: _db
+                  .collection('forum_posts')
                   .doc(widget.postId)
                   .collection('replies')
                   .orderBy('timestamp')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator(color: Colors.indigo));
                 }
 
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error loading replies'));
+                  return Center(
+                    child: Text(
+                      'Error loading replies',
+                      style: TextStyle(color: Colors.indigo[900], fontSize: 16),
+                    ),
+                  );
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('No replies yet'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.comment, size: 64, color: Colors.indigo[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No replies yet.',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.indigo[900],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Be the first to reply!',
+                          style: TextStyle(fontSize: 16, color: Colors.indigo[700]),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 final replies = snapshot.data!.docs;
 
                 return ListView.builder(
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(16),
                   itemCount: replies.length,
                   itemBuilder: (context, index) {
                     final reply = replies[index];
@@ -327,8 +484,9 @@ class _RepliesScreenState extends State<RepliesScreen> {
               },
             ),
           ),
-          Padding(
-            padding: EdgeInsets.all(8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.white,
             child: Row(
               children: [
                 Expanded(
@@ -336,15 +494,22 @@ class _RepliesScreenState extends State<RepliesScreen> {
                     controller: _replyController,
                     decoration: InputDecoration(
                       labelText: 'Write a reply...',
-                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.comment, color: Colors.indigo[600]),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.indigo[600]!, width: 2),
+                      ),
                     ),
                     maxLines: 2,
+                    maxLength: 200,
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(Icons.send, color: Theme.of(context).primaryColor),
+                  icon: Icon(Icons.send, color: Colors.indigo[600]),
                   onPressed: _addReply,
+                  tooltip: 'Send reply',
                 ),
               ],
             ),
@@ -356,47 +521,68 @@ class _RepliesScreenState extends State<RepliesScreen> {
 
   Widget _buildReplyLoading() {
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        title: Container(
-          height: 14,
-          width: double.infinity,
-          color: Colors.grey[200],
-        ),
-        subtitle: Container(
-          height: 12,
-          width: 100,
-          color: Colors.grey[100],
-          margin: EdgeInsets.only(top: 8),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 14,
+              width: double.infinity,
+              color: Colors.grey[200],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 12,
+              width: 100,
+              color: Colors.grey[200],
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildReplyCard(DocumentSnapshot reply, String authorEmail) {
+    String formattedDate = 'Unknown date';
+    if (reply['timestamp'] != null && reply['timestamp'] is Timestamp) {
+      Timestamp timestamp = reply['timestamp'] as Timestamp;
+      DateTime dateTime = timestamp.toDate();
+      formattedDate = DateFormat('MMM dd, yyyy, h:mm a').format(dateTime);
+    }
+
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 4),
-      elevation: 1,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               reply['message'],
-              style: TextStyle(fontSize: 14),
+              style: TextStyle(fontSize: 14, color: Colors.indigo[800]),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.person_outline, size: 12, color: Colors.grey),
-                SizedBox(width: 4),
-                Text(
-                  authorEmail,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                Icon(Icons.person_outline, size: 14, color: Colors.indigo[600]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    authorEmail,
+                    style: TextStyle(fontSize: 12, color: Colors.indigo[600]),
                   ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.access_time, size: 14, color: Colors.indigo[600]),
+                const SizedBox(width: 4),
+                Text(
+                  formattedDate,
+                  style: TextStyle(fontSize: 12, color: Colors.indigo[600]),
                 ),
               ],
             ),

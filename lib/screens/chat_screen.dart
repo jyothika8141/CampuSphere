@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../services/chat_service.dart';
 import '../services/notification_service.dart';
 
@@ -70,7 +71,6 @@ class _ChatScreenState extends State<ChatScreen> {
         messageText,
       );
 
-      // Updated notification call with title and body
       await NotificationService.sendNotification(
         widget.receiverId,
         'New message from ${_receiverEmail.split('@').first}',
@@ -82,7 +82,10 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message: ${e.toString()}')),
+          SnackBar(
+            content: Text('Failed to send message: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -112,8 +115,15 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.indigo[50],
       appBar: AppBar(
-        title: Text(_isLoading ? 'Loading...' : _receiverEmail),
+        backgroundColor: Colors.indigo[600],
+        foregroundColor: Colors.white,
+        title: Text(
+          _isLoading ? 'Loading...' : _receiverEmail,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -122,11 +132,16 @@ class _ChatScreenState extends State<ChatScreen> {
               stream: _chatService.getMessages(widget.chatId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator(color: Colors.indigo));
                 }
 
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error loading messages'));
+                  return Center(
+                    child: Text(
+                      'Error loading messages',
+                      style: TextStyle(color: Colors.indigo[900], fontSize: 16),
+                    ),
+                  );
                 }
 
                 final messages = snapshot.data?.docs ?? [];
@@ -134,9 +149,34 @@ class _ChatScreenState extends State<ChatScreen> {
                   _scrollToBottom();
                 });
 
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.indigo[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No messages yet.',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.indigo[900],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Start the conversation!',
+                          style: TextStyle(fontSize: 16, color: Colors.indigo[700]),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(16),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
@@ -151,36 +191,47 @@ class _ChatScreenState extends State<ChatScreen> {
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isMe
-                              ? Theme.of(context).primaryColor.withOpacity(0.8)
-                              : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(12),
+                          color: isMe ? Colors.indigo[600] : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(16).copyWith(
+                            topLeft: isMe ? const Radius.circular(16) : const Radius.circular(4),
+                            topRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
+                            bottomLeft: const Radius.circular(16),
+                            bottomRight: const Radius.circular(16),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (!isMe)
-                              Text(
-                                _receiverEmail.split('@').first,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[800],
-                                ),
-                              ),
+                            // if (!isMe)
+                            //   Text(
+                            //     _receiverEmail.split('@').first,
+                            //     style: TextStyle(
+                            //       fontSize: 12,
+                            //       fontWeight: FontWeight.w600,
+                            //       color: Colors.indigo[800],
+                            //     ),
+                            //   ),
+                            const SizedBox(height: 4),
                             Text(
                               message['message'],
                               style: TextStyle(
-                                color: isMe ? Colors.white : Colors.black,
+                                fontSize: 14,
+                                color: isMe ? Colors.white : Colors.indigo[900],
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
                               _formatTimestamp(message['timestamp']),
                               style: TextStyle(
                                 fontSize: 10,
-                                color: isMe
-                                    ? Colors.white70
-                                    : Colors.black54,
+                                color: isMe ? Colors.indigo[100] : Colors.indigo[600],
                               ),
                             ),
                           ],
@@ -192,8 +243,9 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            padding: const EdgeInsets.all(12),
+            color: Colors.white,
             child: Row(
               children: [
                 Expanded(
@@ -201,25 +253,27 @@ class _ChatScreenState extends State<ChatScreen> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
-                      border: OutlineInputBorder(
+                      prefixIcon: Icon(Icons.message, color: Colors.indigo[600]),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
+                      focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide(color: Colors.indigo[600]!, width: 2),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     minLines: 1,
                     maxLines: 3,
+                    maxLength: 500,
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
                   icon: _isSending
-                      ? const CircularProgressIndicator()
-                      : const Icon(Icons.send),
+                      ? CircularProgressIndicator(color: Colors.indigo[600])
+                      : Icon(Icons.send, color: Colors.indigo[600]),
                   onPressed: _sendMessage,
+                  tooltip: 'Send message',
                 ),
               ],
             ),
@@ -229,8 +283,9 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  String _formatTimestamp(Timestamp timestamp) {
+  String _formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return 'Unknown time';
     final dateTime = timestamp.toDate();
-    return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return DateFormat('MMM dd, yyyy, h:mm a').format(dateTime);
   }
 }

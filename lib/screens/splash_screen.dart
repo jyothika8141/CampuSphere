@@ -80,12 +80,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.indigo.shade500,
+              Colors.indigo[900]!,
+              Colors.indigo[700]!,
+              Colors.indigo[500]!,
             ],
           ),
         ),
@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo Icon with decorative elements
+                      // Logo with decorative elements
                       Stack(
                         alignment: Alignment.center,
                         children: [
@@ -107,19 +107,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           RotationTransition(
                             turns: _rotateAnimation,
                             child: Container(
-                              width: 160,
-                              height: 160,
+                              width: 180,
+                              height: 180,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
-                                  colors: [Colors.blue.shade100, Colors.blue.shade300],
+                                  colors: [Colors.indigo[300]!, Colors.indigo[100]!],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 15,
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 20,
                                     spreadRadius: 2,
                                   ),
                                 ],
@@ -127,130 +127,109 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                             ),
                           ),
 
-                          // Middle ring
+                          // Inner ring
                           Container(
-                            width: 130,
-                            height: 130,
+                            width: 140,
+                            height: 140,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withOpacity(0.9),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
                           ),
 
-                          // Icon with background
+                          // Logo icon
                           ScaleTransition(
                             scale: _scaleAnimation,
                             child: Container(
-                              width: 110,
-                              height: 110,
-                              decoration: BoxDecoration(
+                              width: 120,
+                              height: 120,
+                              decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 5,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
                               ),
                               child: Icon(
                                 Icons.school_rounded,
-                                size: 70,
-                                color: Colors.blue.shade800,
+                                size: 80,
+                                color: Colors.indigo[800],
                               ),
                             ),
                           ),
 
-                          // Small decorative circles
+                          // Subtle decorative elements
                           Positioned(
-                            top: 15,
-                            right: 15,
-                            child: CircleAvatar(
-                              radius: 12,
-                              backgroundColor: Colors.orange.shade400,
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 20,
-                            left: 10,
-                            child: CircleAvatar(
-                              radius: 8,
-                              backgroundColor: Colors.green.shade400,
-                            ),
-                          ),
-                          Positioned(
-                            top: 30,
-                            left: 20,
+                            top: 20,
+                            right: 20,
                             child: CircleAvatar(
                               radius: 10,
-                              backgroundColor: Colors.purple.shade400,
+                              backgroundColor: Colors.indigo[200],
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 25,
+                            left: 15,
+                            child: CircleAvatar(
+                              radius: 8,
+                              backgroundColor: Colors.indigo[300],
                             ),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32),
 
-                      // App Name with shimmer effect
-                      ShaderMask(
-                        shaderCallback: (bounds) {
-                          return LinearGradient(
-                            colors: [
-                              Colors.white,
-                              Colors.white.withOpacity(0.8),
-                              Colors.white,
-                            ],
-                            stops: [0.2, 0.5, 0.8],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ).createShader(bounds);
-                        },
-                        child: Text(
-                          'CampuSphere',
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 2.0,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 10.0,
-                                color: Colors.black.withOpacity(0.3),
-                                offset: const Offset(2, 2),
-                              ),
-                            ],
-                          ),
+                      // App Name with subtle glow
+                      Text(
+                        'CampuSphere',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 2.5,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 15.0,
+                              color: Colors.indigo[300]!.withOpacity(0.5),
+                              offset: const Offset(0, 0),
+                            ),
+                          ],
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // Tagline
                       Text(
                         'Connect. Learn. Thrive.',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.white.withOpacity(0.9),
-                          letterSpacing: 1.5,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.indigo[100],
+                          letterSpacing: 1.2,
                         ),
                       ),
 
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 48),
 
-                      // Loading Indicator with pulse animation
+                      // Loading Indicator with smooth animation
                       TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0.8, end: 1.2),
-                        duration: const Duration(milliseconds: 800),
+                        tween: Tween<double>(begin: 0.9, end: 1.1),
+                        duration: const Duration(milliseconds: 1000),
+                        curve: Curves.easeInOut,
                         builder: (context, value, child) {
                           return Transform.scale(
                             scale: value,
                             child: SizedBox(
-                              width: 40,
-                              height: 40,
+                              width: 36,
+                              height: 36,
                               child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.indigo[100]!),
                                 strokeWidth: 3,
                               ),
                             ),
