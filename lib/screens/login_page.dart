@@ -150,6 +150,7 @@ class _LoginPageState extends State<LoginPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               elevation: 2,
+                              minimumSize: const Size(double.infinity, 56), // Added to match TextFormField width
                             ),
                             child: _isLoading
                                 ? const SizedBox(

@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class MyRegistrationsPage extends StatelessWidget {
   const MyRegistrationsPage({Key? key}) : super(key: key);
+
+  // Function to fetch organizer email from users collection
+  Future<String> _getOrganizerEmail(String organizerId) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(organizerId)
+          .get();
+      return userDoc.exists ? userDoc['email']?.toString() ?? 'Unknown Organizer' : 'Unknown Organizer';
+    } catch (e) {
+      return 'Unknown Organizer';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,45 +123,101 @@ class MyRegistrationsPage extends StatelessWidget {
                   }
 
                   var event = eventSnapshot.data!;
-                  return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16.0),
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.indigo[100],
-                        child: Icon(
-                          Icons.event,
-                          color: Colors.indigo[600],
+                  // Format date if it exists
+                  String formattedDate = 'No date available';
+                  if (event['date'] != null) {
+                    if (event['date'] is Timestamp) {
+                      formattedDate = DateFormat('MMM dd, yyyy').format((event['date'] as Timestamp).toDate());
+                    } else if (event['date'] is String) {
+                      try {
+                        formattedDate = DateFormat('MMM dd, yyyy').format(DateTime.parse(event['date']));
+                      } catch (e) {
+                        formattedDate = 'Invalid date';
+                      }
+                    }
+                  }
+
+                  // Fetch organizer email based on organizerId
+                  return FutureBuilder<String>(
+                    future: _getOrganizerEmail(event['organizerId'] ?? ''),
+                    builder: (context, organizerSnapshot) {
+                      String organizerEmail = 'Unknown Organizer';
+                      if (organizerSnapshot.connectionState == ConnectionState.done &&
+                          organizerSnapshot.hasData) {
+                        organizerEmail = organizerSnapshot.data!;
+                      }
+
+                      return Card(
+                        elevation: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      title: Text(
-                        event['title'] ?? 'Untitled Event',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.indigo[900],
-                        ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          event['description'] ?? 'No description available',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.indigo[700],
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16.0),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.indigo[100],
+                            child: Icon(
+                              Icons.event,
+                              color: Colors.indigo[600],
+                            ),
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          title: Text(
+                            event['title'] ?? 'Untitled Event',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.indigo[900],
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  event['description'] ?? 'No description available',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.indigo[700],
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Organizer: $organizerEmail',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.indigo[700],
+                                    fontWeight: FontWeight.bold, // Made bold
+                                  ),
+                                ),
+                                Text(
+                                  'Date: $formattedDate',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.indigo[700],
+                                    fontWeight: FontWeight.bold, // Made bold
+                                  ),
+                                ),
+                                Text(
+                                  'Department: ${event['department'] ?? 'Not specified'}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.indigo[700],
+                                    fontWeight: FontWeight.bold, // Made bold
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          onTap: () {
+                            // Optional: Add navigation to event details if needed
+                          },
                         ),
-                      ),
-                      onTap: () {
-                        // Optional: Add navigation to event details if needed
-                      },
-                    ),
+                      );
+                    },
                   );
                 },
               );

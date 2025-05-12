@@ -68,9 +68,8 @@ class _StudentHomeState extends State<StudentHome> {
         context,
         MaterialPageRoute(
           builder: (_) => RecommendationScreen(
-            department: 'Computer Science',
-            bio: 'Interested in AI and Machine Learning',
-            events: events,
+            department: userDoc['department'] ?? 'Unknown',
+            interests: userDoc['bio'] ?? 'No interests specified',
           ),
         ),
       );
